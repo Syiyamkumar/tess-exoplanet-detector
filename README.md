@@ -1,10 +1,15 @@
 # ASTRONET-TESS // Exoplanet Transit Detection & Astrophysical Vetting Observatory
 
-Multi-modal exoplanet transit vetting observatory combining PyTorch Tri-Branch 1D-CNN, iterative BLS periodograms, TPF CCD centroid audits, ESA Gaia DR3 flux dilution, FastAPI, and React.
+[![Python 3.10](https://img.shields.io/badge/Python-3.10-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-Tri--Branch%201D--CNN-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-REST%20Telemetry-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React 18](https://img.shields.io/badge/React_18-Mission%20Control%20UI-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Multi--Container-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![ESA Gaia DR3](https://img.shields.io/badge/ESA%20Gaia-DR3%20Astrometry-1B365D?style=flat-square)](https://www.cosmos.esa.int/web/gaia/dr3)
 
-**ASTRONET-TESS** is an end-to-end, multi-modal astronomical vetting workstation engineered to detect and validate transiting exoplanet candidates from **NASA TESS (Transiting Exoplanet Survey Satellite)** photometry.
+**ASTRONET-TESS** is an end-to-end, multi-modal astronomical vetting workstation engineered to detect, characterize, and validate transiting exoplanet candidates from **NASA TESS (Transiting Exoplanet Survey Satellite)** space-telescope photometry.
 
-By uniting iterative **Box Least Squares (BLS)** signal extraction, **raw CCD Target Pixel File (TPF)** photocenter centroid auditing, **ESA Gaia DR3** astrometric flux dilution correction, and a **Tri-Branch Hybrid 1D-CNN + Physics MLP** classifier, the platform separates genuine planetary transits from astrophysical false positives such as eclipsing binaries (EBs) and background eclipsing binaries (BEBs).
+Space-based transit surveys suffer from high false-positive rates caused by grazing eclipsing binaries (EBs), hierarchical triple star systems, and background eclipsing binaries (BEBs) blended within TESS's wide $21''/\text{pixel}$ detector footprint. ASTRONET-TESS addresses this end-to-end by uniting **iterative Box Least Squares (BLS) signal peeling**, **raw CCD Target Pixel File (TPF) centroid tracking**, **ESA Gaia DR3 astrometric flux dilution correction**, and a **Tri-Branch Hybrid 1D-CNN + Physics MLP** classifier inside a containerized Mission Control web interface.
 
 ---
 
@@ -36,6 +41,65 @@ By uniting iterative **Box Least Squares (BLS)** signal extraction, **raw CCD Ta
    - Supports dynamic natural-language candidate synthesis, interactive multi-planet row selection, hoverable astrophysical glossary tooltips, one-click **CSV / PNG** telemetry export, and a persistent **SQLite** vetting history log.
 
 ---
+
+## Table of Contents
+
+- [System Pipeline & Data Flow](#system-pipeline--data-flow)
+- [Scientific & Astrophysical Methodology](#scientific--astrophysical-methodology)
+- [Tri-Branch Hybrid Deep Learning Architecture](#tri-branch-hybrid-deep-learning-architecture)
+- [Observatory Interface Showcase](#observatory-interface-showcase)
+- [Project Architecture](#project-architecture)
+- [Quick Start (Docker Compose)](#quick-start-docker-compose)
+- [Local Development Setup](#local-development-setup)
+- [REST API Reference](#rest-api-reference)
+- [Validated Benchmark Targets](#validated-benchmark-targets)
+- [Author](#author)
+
+---
+
+## System Pipeline & Data Flow
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                         NASA MAST & ESA GAIA DR3 ARCHIVES                            │
+│   • Light Curve FITS (PDCSAP / SAP)    • Raw Target Pixel Files    • Gaia DR3 Cone   │
+└───────────────────┬─────────────────────────────────┬───────────────────────┬────────┘
+                    │                                 │                       │
+                    ▼                                 ▼                       ▼
+┌───────────────────────────────────────┐   ┌───────────────────┐   ┌──────────────────┐
+│  1. PHOTOMETRIC PREPROCESSING         │   │ 2. CCD PIXEL AUDIT│   │ 3. GAIA DILUTION │
+│  • 5σ Outlier Clipping                │   │ • Aperture Mask   │   │ • 42" Cone Query │
+│  • Savitzky-Golay Variability Flatten │   │ • In/Out Centroid │   │ • Flux Blend %   │
+│  • Multi-Sector Stitching (Optional)  │   │ • 21"/px Sky Shift│   │ • True Rp Solver │
+└───────────────────┬───────────────────┘   └─────────┬─────────┘   └─────────┬────────┘
+                    │                                 │                       │
+                    ▼                                 │                       │
+┌───────────────────────────────────────┐             │                       │
+│  4. ITERATIVE BLS SIGNAL PEELING      │             │                       │
+│  • Periodogram Scan [P_min, P_max]    │             │                       │
+│  • Phase Folding & Cadence Parity     │             │                       │
+│  • Transit Masking for Multi-Planets  │             │                       │
+└───────────────────┬───────────────────┘             │                       │
+                    │                                 │                       │
+                    ▼                                 │                       │
+┌───────────────────────────────────────┐             │                       │
+│  5. TRI-BRANCH HYBRID PYTORCH MODEL   │             │                       │
+│  • Global 1D-CNN (201 bins)           │             │                       │
+│  • Local 1D-CNN  (61 bins)            │             │                       │
+│  • Physics MLP   (5 Scalars)          │             │                       │
+│  • Gradient × Input Attribution       │             │                       │
+└───────────────────┬───────────────────┘             │                       │
+                    └─────────────────────────────────┼───────────────────────┘
+                                                      ▼
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                   FASTAPI TELEMETRY SERVER + SQLITE LOGGING (:8000)                  │
+└─────────────────────────────────────────────────────┬────────────────────────────────┘
+                                                      │ JSON REST + CORS
+                                                      ▼
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                REACT + VITE + PLOTLY.JS MISSION CONTROL WORKSTATION (:5173)          │
+│  • Dynamic AI Synthesis  • Multi-Planet Table  • Interactive Plots  • CSV/PNG Export │
+└──────────────────────────────────────────────────────────────────────────────────────┘
 
 ## Project Architecture
 
