@@ -42,6 +42,14 @@ Space-based transit surveys suffer from high false-positive rates caused by graz
 
 ---
 
+Validated Benchmark Targets
+
+1. The Mission Control launch deck includes four pre-configured astrophysical benchmark systems:
+2. L 98-59 — Compact multi-planet terrestrial system ideal for testing iterative multi-planet BLS peeling (Depth: 2–3 Planets).
+3. TOI-700 — Nearby M-dwarf system hosting an Earth-sized planet inside the habitable zone.
+4. WASP-46 — High-SNR Hot Jupiter transit demonstrating deep U-shaped transit morphology and clean on-target CCD centroid lock.
+5. TIC 53593457 — Known astrophysical false positive benchmark used to verify eclipsing binary / centroid shift rejection.
+
 ## Table of Contents
 
 - [System Pipeline & Data Flow](#system-pipeline--data-flow)
