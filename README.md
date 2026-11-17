@@ -155,3 +155,10 @@ tess-exoplanet-detector/
             ├── ObservatoryView.jsx         # Multi-planet table, KPI cards & 2x2 Plotly suite
             ├── PixelAuditView.jsx          # 2D CCD heatmap & sub-pixel centroid scatter
             └── GaiaDilutionView.jsx        # Gaia DR3 sky field map & dilution table
+
+
+
+Author
+Syiyamkumar S
+B.E. Computer Science • Sathyabama Institute of Science and Technology, Chennai
+GitHub: @Syiyamkumar
